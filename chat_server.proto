@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package chat_server;
+
+import "google/protobuf/empty.proto"; 
+
+// Serviço para comunicação Cliente -> Servidor
+service ClientModule {
+    rpc SendMessageToServer(TextMessage) returns (StatusResponse);
+    rpc SubscribeToServerEvents(Empty) returns (stream TextMessage);
+    // Cliente pergunta quem é o líder atual
+    rpc GetLeader(Empty) returns (LeaderInfo);
+}
+
+// Serviço para broadcast de mensagens
+service ServerModule {
+    rpc PushMessageToClients(TextMessage) returns (StatusResponse);
+}
+
+// Serviço para Algoritmo de Eleição (Bully Algorithm)
+service ElectionModule {
+    // Heartbeat para detectar falhas
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+    // Mensagem ELECTION - um servidor inicia eleição
+    rpc Election(ElectionRequest) returns (ElectionResponse);
+    // Mensagem COORDINATOR - anuncia o novo líder
+    rpc Coordinator(CoordinatorRequest) returns (CoordinatorResponse);
+    // Sincronizar estado (mensagens) com o líder
+    rpc SyncState(SyncRequest) returns (SyncResponse);
+}
+
+message Empty {}
+
+message StatusResponse {
+    bool success = 1;
+    int32 client_id = 2;
+    string message = 3;
+}
+
+message TextMessage {
+    int32 client_id_from = 1;
+    string content = 2;
+    int64 lamport_timestamp = 3;
+}
+
+// Mensagens para Eleição
+message HeartbeatRequest {
+    int32 server_id = 1;
+    int64 lamport_timestamp = 2;
+}
+
+message HeartbeatResponse {
+    bool alive = 1;
+    int32 leader_id = 2;
+    int64 lamport_timestamp = 3;
+}
+
+message ElectionRequest {
+    int32 candidate_id = 1;  // ID do servidor que está iniciando a eleição
+    int64 lamport_timestamp = 2;
+}
+
+message ElectionResponse {
+    bool ok = 1;  // "OK" - significa que um servidor com ID maior responde
+    int32 responder_id = 2;
+    int64 lamport_timestamp = 3;
+}
+
+message CoordinatorRequest {
+    int32 leader_id = 1;  // ID do novo líder
+    int64 lamport_timestamp = 2;
+}
+
+message CoordinatorResponse {
+    bool acknowledged = 1;
+    int64 lamport_timestamp = 2;
+}
+
+message LeaderInfo {
+    int32 leader_id = 1;
+    string leader_address = 2;
+    bool is_leader_known = 3;
+}
+
+message SyncRequest {
+    int32 server_id = 1;
+    int64 last_timestamp = 2;
+}
+
+message SyncResponse {
+    repeated TextMessage messages = 1;
+    int64 lamport_timestamp = 2;
+}
