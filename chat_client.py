@@ -5,8 +5,8 @@ import sys
 import argparse
 import logging
 
-import chat_server_pb2 as pb
-import chat_server_pb2_grpc as pb_grpc
+from proto import chat_server_pb2 as pb
+from proto import chat_server_pb2_grpc as pb_grpc
 
 # Classe para o Relógio de Lamport
 class LamportClock:

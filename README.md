@@ -110,7 +110,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Regenerar arquivos gRPC (se necessário)
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. chat_server.proto
+python -m grpc_tools.protoc -I./proto --python_out=./proto --grpc_python_out=./proto ./proto/chat_server.proto
+# Após regenerar, edite proto/chat_server_pb2_grpc.py e mude:
+# "import chat_server_pb2" para "from . import chat_server_pb2"
 ```
 
 ## Executando com Múltiplos Servidores (Cluster)
