@@ -8,26 +8,7 @@ import argparse
 
 from proto import chat_server_pb2 as pb
 from proto import chat_server_pb2_grpc as pb_grpc
-
-# Classe para o Relógio de Lamport
-class LamportClock:
-    def __init__(self):
-        self._timestamp = 0
-        self._lock = threading.Lock()
-
-    def get_time(self):
-        with self._lock:
-            return self._timestamp
-
-    def incrementaRelogio(self):
-        with self._lock:
-            self._timestamp += 1
-            return self._timestamp
-
-    def updateRelogio(self, received_timestamp):
-        with self._lock:
-            self._timestamp = max(self._timestamp, received_timestamp) + 1
-            return self._timestamp
+from common import LamportClock
 
 
 # Algoritmo de Eleição Bullying entre os servidores 
