@@ -1,0 +1,2 @@
+execute_id,clientes,mensagens,intervalo,tempo_total,total_msgs,vazao,lat_media,lat_min,lat_max,lat_desvio,falhas_send,cenario
+chat_perf_20251214_203346_469755,5,120,0.05,6.360317230224609,600,94.33491731336355,0.0024997758865356445,6.151199340820312e-05,0.017890214920043945,0.002094860140893068,0,failover_5c

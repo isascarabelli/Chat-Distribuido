@@ -1,41 +1,43 @@
 # Avaliação de Desempenho – Chat gRPC Distribuído
 
+VERSÃO ATUALIZADA – SEM FLAGS, SEM SCRIPT SHELL, SEM DOWNTIME COMO MÉTRICA PRINCIPAL
+
 Este documento descreve o processo de **avaliação de desempenho** do sistema *Chat gRPC Distribuído com Algoritmo de Eleição Bully*, desenvolvido como trabalho prático final da disciplina **Computação Distribuída**, do curso de **Engenharia de Computação**.
 
-O objetivo deste material é permitir:
-- Compreender a metodologia de testes adotada
-- Executar os testes de forma reproduzível
-- Interpretar corretamente as métricas coletadas
-- Entender as limitações e o escopo dos testes sintéticos realizados
+O objetivo deste material é:
+
+- Documentar a metodologia de testes adotada;
+- Garantir a reprodutibilidade dos experimentos;
+- Explicitar as métricas coletadas e suas interpretações;
+- Delimitar o escopo e as limitações da avaliação sintética realizada.
 
 ---
 
-##  1. Objetivo da Avaliação de Desempenho
+## 1. Objetivo da Avaliação de Desempenho
 
-A avaliação de desempenho visa analisar o comportamento do sistema distribuído sob diferentes cargas sintéticas, considerando:
+A avaliação de desempenho visa caracterizar o comportamento do sistema distribuído sob cargas **sintéticas controladas**, analisando:
 
-- Latência percebida pelos clientes
-- Vazão (throughput) do sistema
-- Escalabilidade com aumento do número de clientes
-- Tolerância a falhas do servidor líder
-- Downtime percebido durante a eleição de um novo líder
+- Latência percebida pelos clientes;
+- Vazão (*throughput*) do sistema;
+- Comportamento sob concorrência crescente;
+- Tolerância a falhas do servidor líder, observada como degradação temporária do serviço.
 
-Os testes são **sintéticos**, executados em ambiente local, e focam na **validação funcional e de desempenho lógico** do sistema, sem a utilização de rede real externa.
+Os testes são executados **em ambiente local**, com foco na validação funcional e no desempenho lógico do sistema distribuído. Não há utilização de rede externa real.
 
 ---
 
 ## 2. Arquitetura Considerada nos Testes
 
-Os testes consideram exatamente a arquitetura implementada no projeto:
+Os testes utilizam exatamente a arquitetura implementada no projeto, sem simplificações ou reimplementações:
 
-- Arquitetura Cliente–Servidor com replicação de servidores
-- Apenas um servidor líder atende clientes por vez
-- Servidores backup participam do algoritmo de eleição Bully
-- Comunicação cliente-servidor via gRPC
-- Comunicação servidor-servidor via gRPC (heartbeat e eleição)
-- Reconexão automática dos clientes após falha do líder
+- Arquitetura Cliente–Servidor com replicação de servidores;
+- Apenas um servidor líder atende clientes em um dado momento;
+- Servidores em *standby* executam o algoritmo de eleição Bully;
+- Comunicação cliente–servidor via gRPC;
+- Comunicação servidor–servidor via gRPC (heartbeat e eleição);
+- Reconexão automática dos clientes após falha do líder.
 
-A avaliação **não reimplementa** nenhuma lógica distribuída.  
+A avaliação **não reimplementa nenhuma lógica distribuída**.  
 O script de testes reutiliza o `ChatClient` original do projeto.
 
 ---
@@ -44,194 +46,109 @@ O script de testes reutiliza o `ChatClient` original do projeto.
 
 ### 3.1 Abordagem
 
-Os testes são realizados do ponto de vista do cliente, pois este representa a experiência real de uso do sistema.
+Os testes são conduzidos do ponto de vista do cliente, pois representam a experiência observável pelo usuário final.
 
-Cada cenário de teste executa:
-- N clientes concorrentes
-- Cada cliente envia M mensagens
-- Intervalo fixo entre envios
-- Medição de métricas durante toda a execução
+Para cada cenário:
 
-Em cenários com falha:
-- O servidor líder é encerrado propositalmente
-- O tempo de indisponibilidade percebido é medido
-- A continuidade do serviço é verificada
+- Um cluster local fixo com **3 servidores** é inicializado automaticamente;
+- **N** clientes concorrentes são criados;
+- Cada cliente envia **M** mensagens;
+- Um intervalo fixo entre envios é respeitado;
+- Métricas são coletadas durante toda a execução.
+
+No cenário com falha:
+
+- O processo do servidor líder é encerrado propositalmente durante a execução;
+- O cluster executa o algoritmo de eleição Bully;
+- Os clientes realizam reconexões automáticas;
+- O impacto é observado como degradação temporária (falhas de envio e variações de latência e vazão).
+
+Cada cenário é executado de forma **isolada**, garantindo ausência de interferência entre execuções consecutivas.
 
 ---
 
 ## 4. Métricas Coletadas
 
-As seguintes métricas são coletadas automaticamente:
+### 4.1 Latência de envio (RPC)
 
-### 4.1 Latência
-- Tempo de execução da chamada `client.send()`
-- Inclui custo de:
-  - Comunicação gRPC
-  - Processamento no líder
-  - Reconexão automática (quando ocorre)
+Tempo de execução da chamada `client.send()`, incluindo:
 
-### 4.2 Vazão (Throughput)
-- Calculada como:
-  
-  total de mensagens enviadas / tempo total do cenário
+- Custos de serialização e transmissão via gRPC;
+- Processamento no servidor líder;
+- Custos adicionais em períodos de reconexão.
+
+### 4.2 Vazão (*Throughput*)
+
+Calculada como o total de mensagens enviadas dividido pelo tempo total do cenário, expressa em mensagens por segundo.
 
 ### 4.3 Variabilidade
-- Desvio padrão da latência
 
-### 4.4 Tolerância a Falhas
-- Número de falhas temporárias de envio
-- Downtime percebido durante a eleição de um novo líder
+Medida por meio do desvio padrão da latência.
+
+### 4.4 Falhas temporárias de envio
+
+Quantidade de exceções observadas durante chamadas de envio. Essa métrica representa períodos de degradação transitória do serviço, especialmente durante a troca de liderança e reconexões.
+
+> Observação: embora o código mantenha um campo de *downtime*, nesta avaliação não foi observada indisponibilidade total contínua do serviço. A recuperação ocorreu predominantemente como degradação transitória, sendo a métrica de falhas temporárias de envio a mais representativa do impacto do failover.
 
 ---
 
-## 5. Requisitos do Ambiente
+## 5. Script de Avaliação
 
-### 5.1 Sistema Operacional
-- Linux
-
-### 5.2 Versão do Python
-- Python 3.9 ou superior
-
-### 5.3 Dependências
-
-As dependências são as mesmas do projeto principal.
-
-## 6. Script de Avaliação
-
-O script principal de testes é:
+A avaliação é executada exclusivamente pelo script:
 
 ```
 performance_analysis.py
 ```
 
-Este script:
-- Pode inicializar o cluster automaticamente
-- Executa cenários de carga sintética
-- Executa testes com e sem failover
-- Gera histórico organizado por execução
-- Exporta resultados em CSV e relatório Markdown
+Características principais:
+
+- Não aceita parâmetros de entrada;
+- Inicializa e encerra automaticamente o cluster de servidores;
+- Executa uma bateria fixa de cenários;
+- Gera arquivos CSV por cenário e um CSV consolidado;
+- Imprime uma tabela-resumo no terminal ao final da execução.
 
 ---
 
-## 7. Execução dos Testes
+## 6. Execução dos Testes
 
-### 7.1 Inicializar o Cluster Automaticamente
+Execução da bateria completa de testes:
 
 ```bash
-python performance_analysis.py --start-cluster
-```
-
-Neste modo, o script sobe três servidores:
-- Servidor 1 – porta 50051
-- Servidor 2 – porta 50052
-- Servidor 3 – porta 50053
-
----
-
-### 7.2 Executar Testes com Cluster Já Ativo
-
-```bash
-python performance_analysis.py   --servers "127.0.0.1:50051,127.0.0.1:50052,127.0.0.1:50053"
+python performance_analysis.py
 ```
 
 ---
 
-## 8. Cenários de Teste Predefinidos
+## 7. Cenários de Teste Executados
 
-Os cenários abaixo foram utilizados para avaliação sintética completa do 
-sistema.
-
-### 8.1 Cenário Base (Validação Funcional)
-
-```bash
-python performance_analysis.py --clients 1 --messages 20 --interval 0.1
-```
-
-Objetivo:
-- Validar funcionamento correto
-- Medir latência mínima
-- Estabelecer baseline
+| Cenário       | Clientes | Mensagens | Intervalo (s) | Falha do líder |
+|--------------|----------|-----------|---------------|----------------|
+| Base         | 2        | 20        | 0.10          | Não            |
+| Carga Normal | 5        | 100       | 0.05          | Não            |
+| Failover     | 5        | 100       | 0.05          | Sim            |
 
 ---
 
-### 8.2 Cenário de Uso Realista (Principal)
+## 8. Arquivos Gerados
 
-```bash
-python performance_analysis.py --clients 5 --messages 100 --interval 0.05
+Cada execução gera um diretório único em:
+
+```
+experiments/results/<execution_id>/
 ```
 
-Objetivo:
-- Avaliar desempenho típico
-- Medir latência média e vazão estável
+Com:
+
+- Um subdiretório por cenário;
+- `resultados.csv` por cenário;
+- `resultados_consolidados.csv`.
 
 ---
 
-### 8.3 Cenário de Escalabilidade
+## 9. Limitações Conhecidas
 
-```bash
-python performance_analysis.py --clients 10 --messages 100 --interval 0.02
-```
-
-Objetivo:
-- Avaliar impacto do aumento de concorrência
-- Identificar gargalo no servidor líder
-
----
-
-### 8.4 Cenário de Failover (Obrigatório)
-
-```bash
-python performance_analysis.py --clients 5 --messages 120 --interval 0.05 
---failover
-```
-
-Objetivo:
-- Validar algoritmo de eleição Bully
-- Medir downtime percebido
-- Verificar reconexão automática
-
----
-
-### 8.5 Cenário de Failover sob Carga (Opcional)
-
-```bash
-python performance_analysis.py --clients 10 --messages 100 --interval 0.02 
---failover
-```
-
-Objetivo:
-- Avaliar robustez do sistema durante falha em alta carga
-
----
-
-## 9. Arquivos Gerados
-
-Cada execução gera um diretório único, preservando histórico:
-
-```
-resultados/
-└── chat_perf_YYYYMMDD_HHMMSS_xxxxxx/
-    ├── resultados.csv
-    └── relatorio.md
-```
-
-### 9.1 resultados.csv
-- Contém métricas estruturadas por execução
-- Pode ser utilizado para gráficos e análises estatísticas
-
-### 9.2 relatorio.md
-- Relatório automático resumido
-- Pode ser convertido para PDF ou usado como base para o relatório final em LaTeX
-
----
-
-## 10. Considerações Finais
-
-Os testes sintéticos realizados são suficientes para:
-
-- Validar o funcionamento do sistema distribuído
-- Analisar desempenho sob diferentes cargas
-- Demonstrar tolerância a falhas do líder
-- Justificar o uso do algoritmo de eleição Bully
-
-A metodologia adotada prioriza clareza, reprodutibilidade e coerência com a arquitetura implementada, atendendo plenamente aos objetivos acadêmicos da disciplina.
+- Avaliação executada em ambiente local e sintético;
+- Não representa latência de rede real;
+- O algoritmo Bully pode apresentar instabilidade sob cargas extremas se timeouts de heartbeat forem agressivos.
