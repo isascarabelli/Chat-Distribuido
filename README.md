@@ -99,7 +99,7 @@ Tabela feita por IA para ilustrar a arquitetura do sistema:
 - Python 3.9+
 - `grpcio`, `grpcio-tools`, `protobuf`
 
-## Instalação
+## Instalação (Linux)
 
 ```bash
 # Criar ambiente virtual
@@ -109,29 +109,74 @@ source venv/bin/activate
 # Instalar dependências
 pip install -r requirements.txt
 
-# Regenerar arquivos gRPC (se necessário)
+# Regenerar arquivos gRPC (se necessário, passo não obrigatório)
 python -m grpc_tools.protoc -I./proto --python_out=./proto --grpc_python_out=./proto ./proto/chat_server.proto
-# Após regenerar, edite proto/chat_server_pb2_grpc.py e mude:
-# "import chat_server_pb2" para "from . import chat_server_pb2"
+# Após regenerar (caso necessário), edite proto/chat_server_pb2_grpc.py e mude:
+"import chat_server_pb2" para "from . import chat_server_pb2"
+```
+
+### Instalação (Windows)
+```powershell
+# Criar ambiente virtual
+py -3 -m venv venv
+
+# Ativar (PowerShell)
+.\venv\Scripts\Activate.ps1
+# ou (CMD)
+venv\Scripts\activate.bat
+
+# Instalar dependências
+py -3 -m pip install -r requirements.txt
+
+# Regenerar arquivos gRPC (se necessário, passo não obrigatório)
+py -3 -m grpc_tools.protoc -I./proto --python_out=./proto --grpc_python_out=./proto ./proto/chat_server.proto
+# Após regenerar (caso necessário), edite proto/chat_server_pb2_grpc.py e mude:
+"import chat_server_pb2" para "from . import chat_server_pb2"
 ```
 
 ## Executando com Múltiplos Servidores (Cluster)
 
 ### Terminal 1 - Servidor 1 (ID=1, porta 50051)
 ```bash
+# Linux
 source venv/bin/activate
 python chat_server.py --id 1 --port 50051 --peers "2:localhost:50052,3:localhost:50053"
 ```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
 
+python chat_server.py --id 1 --port 50051 --peers "2:localhost:50052,3:localhost:50053"
+```
 ### Terminal 2 - Servidor 2 (ID=2, porta 50052)
 ```bash
+# Linux
 source venv/bin/activate
+python chat_server.py --id 2 --port 50052 --peers "1:localhost:50051,3:localhost:50053"
+```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
+
 python chat_server.py --id 2 --port 50052 --peers "1:localhost:50051,3:localhost:50053"
 ```
 
 ### Terminal 3 - Servidor 3 (ID=3, porta 50053)
 ```bash
+# Linux
 source venv/bin/activate
+python chat_server.py --id 3 --port 50053 --peers "1:localhost:50051,2:localhost:50052"
+```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
+
 python chat_server.py --id 3 --port 50053 --peers "1:localhost:50051,2:localhost:50052"
 ```
 
@@ -143,19 +188,46 @@ Após iniciar os 3 servidores, abra mais terminais para os clientes:
 
 ### Terminal 4 - Cliente 1
 ```bash
+# Linux
 source venv/bin/activate
+python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
+```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
+
 python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
 ```
 
 ### Terminal 5 - Cliente 2
 ```bash
+# Linux
 source venv/bin/activate
+python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
+```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
+
 python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
 ```
 
 ### Terminal 6 - Cliente 3
 ```bash
+# Linux
 source venv/bin/activate
+python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
+```
+```powershell
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# ou CMD
+venv\Scripts\activate.bat
+
 python chat_client.py --servers "localhost:50051,localhost:50052,localhost:50053"
 ```
 
