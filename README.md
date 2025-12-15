@@ -44,12 +44,12 @@ Tabela feita por IA para ilustrar a arquitetura do sistema:
                                       │ gRPC (Cliente-Servidor)
                                       │ Apenas o LÍDER atende clientes
                                       ▼
-┌────────────────────────────────────────────────────────────────┐
-│                     CAMADA DE CLIENTES                         │
-│                                                                │
-│            Cliente 1        Cliente 2        Cliente 3         │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+        ┌────────────────────────────────────────────────────────────────┐
+        │                     CAMADA DE CLIENTES                         │
+        │                                                                │
+        │            Cliente 1        Cliente 2        Cliente 3         │
+        │                                                                │
+        └────────────────────────────────────────────────────────────────┘
 ```
 
 | Aspecto | Descrição |
@@ -228,3 +228,7 @@ Servidor 1 envia ELECTION para 2 e 3
         Servidor 1 recebe COORDINATOR
         Atualiza líder para 2
 ```
+## Testes de Desempenho
+
+Na pasta `/experiments` estão os arquivos referentes aos testes de 
+desempenho, assim como as métricas obtidas.
